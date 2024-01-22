@@ -66,11 +66,15 @@ class hypermodel(nn.Module):
                 grads = tuple( self.modularized_lr[0][ self.param_to_block[m]]*g*train_lr for m,g in enumerate(grads) )
             return grads
         else:
+            # main target loss and grad
             grads = torch.autograd.grad(loss_vector[0], shared_params, create_graph= True)
             loss_num = len(loss_vector)
             for task_id in range(1, loss_num):
+                # aux_loss grads
                 aux_grads = torch.autograd.grad(loss_vector[task_id], shared_params, create_graph= True)
                 if self.nonlinear is not None:
+                    # tupel with len: len(grads, aux_grads)
+                    # g:grads, g_aux:aux_grads, m:index in zip()--len(grads)
                     grads = tuple( ( g + self.scale_factor*self.nonlinear(self.modularized_lr[task_id-1][self.param_to_block[m]])*g_aux )*train_lr for m,(g,g_aux) in enumerate( zip(grads, aux_grads) ) )  
                 else:
                     grads = tuple( ( g + self.scale_factor*self.modularized_lr[task_id-1][self.param_to_block[m]]*g_aux )*train_lr for m,(g,g_aux) in enumerate( zip(grads, aux_grads) ) )  
