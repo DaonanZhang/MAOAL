@@ -297,6 +297,8 @@ def modularized_lr_MTL_implicit(model,epochs,train_loader,train_loader2, val_loa
                 logger.info(f"epoch:{epoch},iteration: {k}, training loss: {total_loss.item()}, loss vector: {loss_vec}" )
             
             if counter % config['interval'] == 0 and epoch > config['pre']:
+
+                # eval the model on Dv
                 try: 
                     meta_feature,meta_click,meta_rate,meta_effect = next(aux_loader_iter)
                 except StopIteration:
@@ -337,10 +339,16 @@ def modularized_lr_MTL_implicit(model,epochs,train_loader,train_loader2, val_loa
                 train_loss_vector.append(config["main"]["aux_weight"]*train_auxloss[0])         
                 #train_loss_vector.append(config["main"]["aux_weight"]*train_auxloss[1])                 
                 train_common_grads = modular(train_loss_vector, shared_parameter, whether_single =0, train_lr = 1.0) 
+
+                # Single code to update alpha with current seta
                 meta_optimizer.step(val_loss=meta_total_loss,train_grads=train_common_grads,aux_params = list(modular.parameters()),shared_parameters = shared_parameter)
+
+                
                 logger.info(f"epoch:{epoch} ,iteration:{k}, main loss:{train_main_loss_mean.item():.6f},meta loss:{meta_total_loss.item():.6f}")
         logger.info(f"modular lr:{modular.nonlinear(modular.modularized_lr)}")
         rmse = evaluate_model(model,val_loader,device)
+
+        # save the best_rmse:
         if rmse < best_rmse:
             best_rmse = rmse
             save_model_and_hyperparameters(model,opt,modular,meta_optimizer)
