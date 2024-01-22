@@ -50,6 +50,8 @@ def map_param_to_block(shared_params, level):
 
 class hypermodel(nn.Module):
     def __init__(self, task_num, module_num, param_to_block):
+
+        # 替换target grad 参考aux grad 替换成新的考虑aux grad 的新的梯度
         super(hypermodel, self).__init__()
         self.task_num = task_num
         self.module_num = module_num
@@ -73,6 +75,15 @@ class hypermodel(nn.Module):
                 # aux_loss grads
                 aux_grads = torch.autograd.grad(loss_vector[task_id], shared_params, create_graph= True)
                 if self.nonlinear is not None:
+
+# self.nonlinear(...)：这是一个非线性函数，通常是 ReLU（修正线性单元）激活函数。它被应用于前面学习率计算的结果。
+# 这个非线性函数的作用是对学习率进行非线性变换。不同的非线性函数可以引入模型参数的非线性关系，以适应特定的问题或任务。
+
+# self.scale_factor：这是一个缩放因子，用于调整非线性变换后的学习率对梯度的影响。缩放因子通常是一个超参数，用于控制非线性变换的强度。
+
+# (g + ...)*train_lr：这是最终的梯度更新步骤。它将主任务的梯度 g 与非线性变换后的学习率和其他任务的梯度 g_aux 相结合，
+# 同时乘以全局学习率 train_lr，以更新参数的梯度。这个更新步骤可以根据任务特性、学习率和缩放因子来自适应地调整梯度。
+                    
                     # tupel with len: len(grads, aux_grads)
                     # g:grads, g_aux:aux_grads, m:index in zip()--len(grads)
                     grads = tuple( ( g + self.scale_factor*self.nonlinear(self.modularized_lr[task_id-1][self.param_to_block[m]])*g_aux )*train_lr for m,(g,g_aux) in enumerate( zip(grads, aux_grads) ) )  
@@ -262,13 +273,22 @@ def modularized_lr_MTL_implicit(model,epochs,train_loader,train_loader2, val_loa
             auxloss = obtain_regularizer(model, True)
             loss_list = [rate_loss_mean, config['main']["aux_weight"]*auxloss[0]]
             common_grads = modular(loss_list, shared_parameter, whether_single =0) 
+            
+            # now the grads are weighted from loss_mean and aux_grad)
+            
             loss_vec = torch.stack(loss_list)
             total_loss = torch.sum(loss_vec)
             opt.zero_grad()
             total_loss.backward()
+            
             for p, g in zip(shared_parameter, common_grads):
                 p.grad = g
             opt.step()
+
+            # switch the grad_graph for shared_parameter from p to common_grads: where weighted from aux_g
+            # and use that grads to do the optimizer step
+            # which means: fix alpha and calculate the seta
+            
             del common_grads
 
             counter += 1
