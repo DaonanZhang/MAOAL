@@ -272,6 +272,8 @@ def modularized_lr_MTL_implicit(model,epochs,train_loader,train_loader2, val_loa
                 rate_loss_mean = rate_loss.mean()
             auxloss = obtain_regularizer(model, True)
             loss_list = [rate_loss_mean, config['main']["aux_weight"]*auxloss[0]]
+
+            # EQ. 4
             common_grads = modular(loss_list, shared_parameter, whether_single =0) 
             
             # now the grads are weighted from loss_mean and aux_grad)
@@ -280,9 +282,12 @@ def modularized_lr_MTL_implicit(model,epochs,train_loader,train_loader2, val_loa
             total_loss = torch.sum(loss_vec)
             opt.zero_grad()
             total_loss.backward()
-            
+
+            # EQ. 5
             for p, g in zip(shared_parameter, common_grads):
                 p.grad = g
+
+            # EQ. 6
             opt.step()
 
             # switch the grad_graph for shared_parameter from p to common_grads: where weighted from aux_g
@@ -297,7 +302,7 @@ def modularized_lr_MTL_implicit(model,epochs,train_loader,train_loader2, val_loa
                 logger.info(f"epoch:{epoch},iteration: {k}, training loss: {total_loss.item()}, loss vector: {loss_vec}" )
             
             if counter % config['interval'] == 0 and epoch > config['pre']:
-
+                
                 # eval the model on Dv
                 try: 
                     meta_feature,meta_click,meta_rate,meta_effect = next(aux_loader_iter)
@@ -327,6 +332,7 @@ def modularized_lr_MTL_implicit(model,epochs,train_loader,train_loader2, val_loa
                 train_rate = train_rate.to(device).float()
                 train_logits,_ = model(train_feature)
                 train_main_loss = criterion2(train_logits, train_rate)
+                
                 if config['fewshot']:
                     train_main_loss = train_main_loss*train_effect
                     train_main_loss_mean = (train_main_loss).sum()/(train_effect.sum() + 1e-12)
@@ -337,10 +343,12 @@ def modularized_lr_MTL_implicit(model,epochs,train_loader,train_loader2, val_loa
                 train_loss_vector.append(train_main_loss_mean)
                 train_auxloss = obtain_regularizer(model, True)
                 train_loss_vector.append(config["main"]["aux_weight"]*train_auxloss[0])         
-                #train_loss_vector.append(config["main"]["aux_weight"]*train_auxloss[1])                 
+                #train_loss_vector.append(config["main"]["aux_weight"]*train_auxloss[1])    
+                # LINE 22
                 train_common_grads = modular(train_loss_vector, shared_parameter, whether_single =0, train_lr = 1.0) 
 
                 # Single code to update alpha with current seta
+                # MAOAL LINE 23
                 meta_optimizer.step(val_loss=meta_total_loss,train_grads=train_common_grads,aux_params = list(modular.parameters()),shared_parameters = shared_parameter)
 
                 
