@@ -38,6 +38,7 @@ class MetaOptimizer:
             shared_params=shared_parameters
         )
 
+        # pseudocode: line 22
         for p, g in zip(aux_params, hyper_gards):
             p.grad = g
 
@@ -52,6 +53,7 @@ class MetaOptimizer:
             clip_grad_norm_(aux_params, max_norm=self.max_grad_norm)
 
         # meta step
+        # MAOAL code: line 23
         self.meta_optimizer.step()
         if return_grads:
             return hyper_gards
