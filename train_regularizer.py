@@ -303,7 +303,7 @@ def modularized_lr_MTL_implicit(model,epochs,train_loader,train_loader2, val_loa
             
             if counter % config['interval'] == 0 and epoch > config['pre']:
                 
-                # eval the model on Dv
+                # eval the model on Ddev -> train_loader2 = D_dev
                 try: 
                     meta_feature,meta_click,meta_rate,meta_effect = next(aux_loader_iter)
                 except StopIteration:
