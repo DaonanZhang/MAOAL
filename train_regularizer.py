@@ -434,6 +434,10 @@ test_loader = DataLoader(test_set, shuffle=False,num_workers=1, batch_size = con
 
 if config["use_aux"] == 1:
     train_set2 = movie_dataset(train_path, data, fewshot_dict, user_feature, item_feature, feature_map)
+    
+    # train_set2 and aux_set have the same batch_size and same as the train_set
+    # aux_set => dev_set
+    
     train_loader2 = DataLoader(train_set2, shuffle=True,num_workers=1, batch_size = config["train_batchsize"])
     aux_set = movie_dataset(aux_path, data, fewshot_dict, user_feature, item_feature, feature_map)
     aux_loader = DataLoader(aux_set, shuffle=True,num_workers=1, batch_size = config["train_batchsize"])    
