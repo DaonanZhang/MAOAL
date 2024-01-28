@@ -22,12 +22,15 @@ class Hypergrad:
         :param params:
         :return:
         """
+        # dL_val_dw
+        # v1
         dloss_val_dparams = torch.autograd.grad(
             loss_val,
             shared_params,
             retain_graph=True,
             allow_unused=True
         )
+        
         v2 = self._approx_inverse_hvp(dloss_val_dparams, grad_train, shared_params)
 
         v3 = torch.autograd.grad(
@@ -36,6 +39,7 @@ class Hypergrad:
             grad_outputs=v2,
             allow_unused=True
         )
+        # assume the dL_val_d_lambda is always zero
 
         return list(-g for g in v3)
 
