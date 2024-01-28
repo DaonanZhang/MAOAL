@@ -12,6 +12,7 @@ class Hypergrad:
         self.learning_rate = learning_rate
         self.truncate_iter = truncate_iter
 
+    # algo 2 in ho
     def grad(self, loss_val, grad_train, aux_params, shared_params):
         """Calculates the gradients w.r.t \phi dloss_aux/dphi, see paper for details
 
