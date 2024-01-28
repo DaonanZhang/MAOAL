@@ -31,6 +31,7 @@ class MetaOptimizer:
         self.zero_grad()
 
         # validation loss
+        # calculate algo 2 return lambuda_gradient
         hyper_gards = self.hypergrad.grad(
             loss_val=val_loss,
             grad_train=train_grads,
