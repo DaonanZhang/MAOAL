@@ -75,6 +75,13 @@ class hypermodel(nn.Module):
                 # aux_loss grads
                 aux_grads = torch.autograd.grad(loss_vector[task_id], shared_params, create_graph= True)
                 if self.nonlinear is not None:
+                    # tupel with len: len(grads, aux_grads)
+                    # g:grads, g_aux:aux_grads, m:index in zip()--len(grads)
+                    grads = tuple( ( g + self.scale_factor*self.nonlinear(self.modularized_lr[task_id-1][self.param_to_block[m]])*g_aux )*train_lr for m,(g,g_aux) in enumerate( zip(grads, aux_grads) ) )  
+                else:
+                    grads = tuple( ( g + self.scale_factor*self.modularized_lr[task_id-1][self.param_to_block[m]]*g_aux )*train_lr for m,(g,g_aux) in enumerate( zip(grads, aux_grads) ) )  
+            return grads
+
 
 # self.nonlinear(...)：这是一个非线性函数，通常是 ReLU（修正线性单元）激活函数。它被应用于前面学习率计算的结果。
 # 这个非线性函数的作用是对学习率进行非线性变换。不同的非线性函数可以引入模型参数的非线性关系，以适应特定的问题或任务。
@@ -84,12 +91,6 @@ class hypermodel(nn.Module):
 # (g + ...)*train_lr：这是最终的梯度更新步骤。它将主任务的梯度 g 与非线性变换后的学习率和其他任务的梯度 g_aux 相结合，
 # 同时乘以全局学习率 train_lr，以更新参数的梯度。这个更新步骤可以根据任务特性、学习率和缩放因子来自适应地调整梯度。
                     
-                    # tupel with len: len(grads, aux_grads)
-                    # g:grads, g_aux:aux_grads, m:index in zip()--len(grads)
-                    grads = tuple( ( g + self.scale_factor*self.nonlinear(self.modularized_lr[task_id-1][self.param_to_block[m]])*g_aux )*train_lr for m,(g,g_aux) in enumerate( zip(grads, aux_grads) ) )  
-                else:
-                    grads = tuple( ( g + self.scale_factor*self.modularized_lr[task_id-1][self.param_to_block[m]]*g_aux )*train_lr for m,(g,g_aux) in enumerate( zip(grads, aux_grads) ) )  
-            return grads
 
 def load_model_test(model,opt,load_dir,test_loader,device):
     info = torch.load(os.path.join(load_dir,'best_predictor.pth'))
