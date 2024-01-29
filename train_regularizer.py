@@ -305,6 +305,7 @@ def modularized_lr_MTL_implicit(model,epochs,train_loader,train_loader2, val_loa
                 
                 # eval the model on Ddev -> aux_loader = D_dev
                 # train_loader2 -> another -> D_train for the Alpha GD
+                # same batch as from the train_loader -> in order to get the w*(lamba*)
                 try: 
                     meta_feature,meta_click,meta_rate,meta_effect = next(aux_loader_iter)
                 except StopIteration:
