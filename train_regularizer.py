@@ -79,6 +79,8 @@ class hypermodel(nn.Module):
                     # g:grads, g_aux:aux_grads, m:index in zip()--len(grads)
                     grads = tuple( ( g + self.scale_factor*self.nonlinear(self.modularized_lr[task_id-1][self.param_to_block[m]])*g_aux )*train_lr for m,(g,g_aux) in enumerate( zip(grads, aux_grads) ) )  
                 else:
+
+                    # each iteration, the grads would be weighted by the [task_id]'s aux_task which means, for all seta, already weighted by alpha_task_id(index) for all module
                     grads = tuple( ( g + self.scale_factor*self.modularized_lr[task_id-1][self.param_to_block[m]]*g_aux )*train_lr for m,(g,g_aux) in enumerate( zip(grads, aux_grads) ) )  
             return grads
 
